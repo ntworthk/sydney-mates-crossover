@@ -5,11 +5,11 @@ library(sf)
 ui <- fluidPage(
   titlePanel("Sydney mates crossover"),
   fluidRow(
-    column(8, p("Click on the map to enter the home locations of your friends. The red area is within 5km of all people.")),
+    column(8, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
     column(4, actionButton("clearMarkers", "Start again"))
   ),
   fluidRow(
-    textOutput("msg")
+    column(12, textOutput("msg"))
   ),
   fluidRow(
     leafletOutput("map1", height = 800)
@@ -18,6 +18,8 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
+  
+  lgas <- readRDS("lgas_small.rds")
   
   polys <- st_sf(st_sfc(st_polygon()), crs = 4326) %>% dplyr::rename(x = 1) %>% head(0)
   
@@ -35,11 +37,25 @@ server <- function(input, output, session) {
   observeEvent(input$map1_click, {
     
     if (v$marker_count < 5) {
-      poly <- st_sfc(st_point(c(input$map1_click$lng, input$map1_click$lat)), crs = 4326) %>%
+      
+      # Get point at click location
+      pt <- st_sfc(st_point(c(input$map1_click$lng, input$map1_click$lat)), crs = 4326)
+      
+      # Generate 5km buffer around point
+      poly <- pt %>%
         st_transform(3577) %>%
         st_buffer(5000) %>%
         st_transform(4326)
       
+      # Find LGA of point
+      current_lga <- lgas[as.numeric(st_within(pt, lgas)), ]
+      
+      # If not an LGA of concern, valid area is within 5km of point _or_ within
+      # LGA, so take union. If it is an LGA of concern, valid area is only
+      # within 5km of point, so don't take the union
+      if (!current_lga$of_concern & !grepl("Unin", current_lga$ABB_NAME)) {
+        poly <- st_union(poly, current_lga)
+      }
       
       v$polys <- dplyr::bind_rows(v$polys, st_as_sf(poly))
       
