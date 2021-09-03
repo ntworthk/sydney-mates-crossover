@@ -2,6 +2,8 @@ library(shiny)
 library(leaflet)
 library(sf)
 
+lgas <- readRDS("lgas_small.rds")
+  
 ui <- fluidPage(
   titlePanel("Sydney mates crossover"),
   fluidRow(
@@ -19,7 +21,6 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  lgas <- readRDS("lgas_small.rds")
   
   polys <- st_sf(st_sfc(st_polygon()), crs = 4326) %>% dplyr::rename(x = 1) %>% head(0)
   
