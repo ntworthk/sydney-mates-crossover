@@ -4,6 +4,7 @@ library(sf)
 
 lgas <- readRDS("lgas_small.rds")
 parks <- readRDS("sydney_parks.rds")
+ico <- makeAwesomeIcon()
 
 generate_buffer <- function(point, radius) {
   point %>%
@@ -40,11 +41,24 @@ generate_allowed_area <- function(point) {
 }
 
 calculate_intersections <- function(polygons, marker_count) {
-  dplyr::bind_rows(polygons) %>%
+  inter <- dplyr::bind_rows(polygons) %>%
     st_transform(3577) %>% 
     st_intersection() %>%
     st_transform(4326) %>% 
     dplyr::filter(n.overlaps == marker_count)
+  
+  if (st_geometry_type(inter) != "POLYGON") {
+    
+    # saveRDS(inter, "temp_inter.rds")
+    
+    inter <- inter %>% 
+      st_collection_extract(type = "POLYGON") %>%
+      st_union() %>%
+      st_sf()
+  }
+  
+  inter
+  
 }
 
 
@@ -110,7 +124,7 @@ server <- function(input, output, session) {
           addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", v$marker_count), group = "areas") %>% 
           clearGroup(group = "overlappy") %>% 
           addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy") %>% 
-          addMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = v$marker_count)
+          addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = v$marker_count, icon = ico)
         
         if (v$show_parks) {
           
@@ -127,8 +141,8 @@ server <- function(input, output, session) {
           clearGroup(group = "parks") %>% 
           addPolygons(
             data = v$parks,
-            color = "green",
-            fillOpacity = 0.6,
+            color = ~col,
+            fillOpacity = ~ifelse(col == "green", 0.6, 1),
             group = "parks",
             label = ~name,
             highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
@@ -201,8 +215,8 @@ server <- function(input, output, session) {
           leafletProxy("map1") %>%
             addPolygons(
               data = v$parks,
-              color = "green",
-              fillOpacity = 0.6,
+              color = ~col,
+              fillOpacity = ~ifelse(col == "green", 0.6, 1),
               group = "parks",
               label = ~name,
               highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
@@ -249,8 +263,8 @@ server <- function(input, output, session) {
         clearGroup(group = "parks") %>% 
         addPolygons(
           data = v$parks,
-          color = "green",
-          fillOpacity = 0.6,
+          color = ~col,
+          fillOpacity = ~ifelse(col == "green", 0.6, 1),
           group = "parks",
           label = ~name,
           highlightOptions = highlightOptions(color = "white", weight = 3, fillOpacity = 0.8, opacity = 1, bringToFront = TRUE)
