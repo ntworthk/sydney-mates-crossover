@@ -62,9 +62,9 @@ calculate_intersections <- function(polygons, marker_count) {
 
 
 ui <- fluidPage(
-  titlePanel("Sydney mates crossover"),
+  titlePanel("Sydney picnic party"),
   fluidRow(
-    column(8, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
+    column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
     column(2, actionButton("clearMarkers", "Start again")),
     column(2, actionButton("showParks", textOutput("parks_message")))
   ),
@@ -72,7 +72,7 @@ ui <- fluidPage(
     column(12, textOutput("msg"))
   ),
   fluidRow(
-    leafletOutput("map1", height = 800)
+    column(12, align = "center", leafletOutput("map1", height = 800, width = "80%"))
   ),
   fluidRow(
     column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in additional with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
