@@ -46,7 +46,6 @@ calculate_intersections <- function(polygons, marker_count) {
     st_intersection() %>%
     st_transform(4326) %>% 
     dplyr::filter(n.overlaps == marker_count)
-    saveRDS(inter, "temp_inter.rds")
   
   if (nrow(inter) > 0 && st_geometry_type(inter) != "POLYGON") {
 
