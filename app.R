@@ -85,6 +85,15 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
+  showModal(modalDialog(
+    title = "Welcome to the Sydney picnic map!",
+    p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)"),
+    p("The map will show the area that everyone can reach in red"),
+    p("Click the 'show parks' button to find a nice grassy spot to meet!"),
+    footer = a(href = "https://www.nsw.gov.au/covid-19/rules/greater-sydney#outdoor-gatherings", target = "_blank", "See the NSW government website for more details."),
+    easyClose = TRUE
+  ))
+  
   v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks")
   
   output$map1 <- renderLeaflet({
