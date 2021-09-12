@@ -56,7 +56,6 @@ calculate_intersections <- function(polygons, marker_count) {
       st_sf()
   }
   
-  # saveRDS(inter, "inter.rds")
   inter
   
 }
@@ -134,7 +133,7 @@ server <- function(input, output, session) {
           if (v$overlap) {
             v$parks <- parks %>%
               dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
-            # saveRDS(v$parks, "temp_parks.rds")
+
           } else {
             v$parks <- list()
           }
