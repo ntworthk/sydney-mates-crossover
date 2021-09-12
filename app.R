@@ -48,14 +48,15 @@ calculate_intersections <- function(polygons, marker_count) {
     dplyr::filter(n.overlaps == marker_count)
   
   if (nrow(inter) > 0 && st_geometry_type(inter) != "POLYGON") {
-
-
+    
+    
     inter <- inter %>%
       st_collection_extract(type = "POLYGON") %>%
       st_union() %>%
       st_sf()
   }
-
+  
+  # saveRDS(inter, "inter.rds")
   inter
   
 }
@@ -69,7 +70,7 @@ ui <- fluidPage(
     column(2, actionButton("showParks", textOutput("parks_message")))
   ),
   fluidRow(
-    column(12, textOutput("msg"))
+    column(12, h3(textOutput("msg")))
   ),
   fluidRow(
     column(12, align = "center", leafletOutput("map1", height = 800, width = "80%"))
@@ -103,41 +104,47 @@ server <- function(input, output, session) {
     
     if (v$marker_count < 5) {
       
-      v$marker_count <- v$marker_count + 1
-      
-      # Get point at click location
-      pt <- st_sfc(st_point(c(input$map1_click$lng, input$map1_click$lat)), crs = 4326)
-      
-      v$markers <- append(v$markers, list(pt))
-      
-      # Generate 5km buffer around point and LGA
-      poly <- generate_allowed_area(pt)
-
-      v$polys <- append(v$polys, list(st_as_sf(poly)))
-      
-      v$overlappy <- calculate_intersections(v$polys, v$marker_count)
-
       if (v$overlap) {
+        v$marker_count <- v$marker_count + 1
+        
+        # Get point at click location
+        pt <- st_sfc(st_point(c(input$map1_click$lng, input$map1_click$lat)), crs = 4326)
+        
+        v$markers <- append(v$markers, list(pt))
+        
+        # Generate 5km buffer around point and LGA
+        poly <- generate_allowed_area(pt)
+        
+        v$polys <- append(v$polys, list(st_as_sf(poly)))
+        
+        v$overlappy <- calculate_intersections(v$polys, v$marker_count)
+        
         
         leafletProxy("map1") %>%
           addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", v$marker_count), group = "areas") %>% 
+          clearGroup(group = "parks") %>% 
           clearGroup(group = "overlappy") %>% 
           addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy") %>% 
           addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = v$marker_count, icon = ico)
         
+        v$overlap <- nrow(v$overlappy) > 0
+        
         if (v$show_parks) {
           
-          v$parks <- parks %>%
-            dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
-          
+          if (v$overlap) {
+            v$parks <- parks %>%
+              dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+            # saveRDS(v$parks, "temp_parks.rds")
+          } else {
+            v$parks <- list()
+          }
         }
         
       }
       
-      if (v$show_parks) {
+      if (v$overlap & v$show_parks) {
         
         leafletProxy("map1") %>%
-          clearGroup(group = "parks") %>% 
           addPolygons(
             data = v$parks,
             color = ~col,
@@ -255,19 +262,28 @@ server <- function(input, output, session) {
     
     if (v$show_parks) {
       
-      v$parks <- parks %>%
-        dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
-      
       leafletProxy("map1") %>%
-        clearGroup(group = "parks") %>% 
-        addPolygons(
-          data = v$parks,
-          color = ~col,
-          fillOpacity = ~ifelse(col == "green", 0.6, 1),
-          group = "parks",
-          label = ~name,
-          highlightOptions = highlightOptions(color = "white", weight = 3, fillOpacity = 0.8, opacity = 1, bringToFront = TRUE)
-        )
+        clearGroup(group = "parks")
+      
+      if (nrow(v$overlappy) > 0) {
+        
+        v$parks <- parks %>%
+          dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+        
+        leafletProxy("map1") %>%
+          addPolygons(
+            data = v$parks,
+            color = ~col,
+            fillOpacity = ~ifelse(col == "green", 0.6, 1),
+            group = "parks",
+            label = ~name,
+            highlightOptions = highlightOptions(color = "white", weight = 3, fillOpacity = 0.8, opacity = 1, bringToFront = TRUE)
+          )
+        
+      } else {
+        v$parks <- list()
+      }
+      
       
     }
     
