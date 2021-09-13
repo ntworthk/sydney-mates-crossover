@@ -41,6 +41,7 @@ generate_allowed_area <- function(point) {
 }
 
 calculate_intersections <- function(polygons, marker_count) {
+  
   inter <- dplyr::bind_rows(polygons) %>%
     st_transform(3577) %>% 
     st_intersection() %>%
@@ -49,12 +50,14 @@ calculate_intersections <- function(polygons, marker_count) {
   
   if (nrow(inter) > 0 && st_geometry_type(inter) != "POLYGON") {
     
-    
     inter <- inter %>%
       st_collection_extract(type = "POLYGON") %>%
-      st_union() %>%
+      st_make_valid() %>% 
+      dplyr::filter(st_is_valid(x)) %>% 
       st_sf()
   }
+  
+  inter <- inter %>% dplyr::filter(st_geometry_type(x) %in% c("MULTIPOLYGON", "POLYGON"))
   
   inter
   
