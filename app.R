@@ -1,6 +1,7 @@
 library(shiny)
 library(leaflet)
 library(sf)
+library(shinythemes)
 
 lgas <- readRDS("lgas_small.rds")
 parks <- readRDS("sydney_parks.rds")
@@ -64,7 +65,7 @@ calculate_intersections <- function(polygons, marker_count) {
 }
 
 
-ui <- fluidPage(
+ui <- fluidPage(theme = shinytheme("flatly"),
   tags$head(tags$link(rel="shortcut icon", href="/favicon.ico"), tags$style(HTML(".leaflet-container {
   cursor: auto !important;
 }"))),
