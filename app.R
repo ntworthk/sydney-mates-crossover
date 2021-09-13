@@ -145,7 +145,7 @@ server <- function(input, output, session) {
           if (v$overlap) {
             v$parks <- parks %>%
               dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
-
+            
           } else {
             v$parks <- list()
           }
@@ -155,15 +155,22 @@ server <- function(input, output, session) {
       
       if (v$overlap & v$show_parks) {
         
-        leafletProxy("map1") %>%
-          addPolygons(
-            data = v$parks,
-            color = ~col,
-            fillOpacity = ~ifelse(col == "green", 0.6, 1),
-            group = "parks",
-            label = ~name,
-            highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
-          )
+        if (nrow(v$parks) > 0) {
+          
+          leafletProxy("map1") %>%
+            addPolygons(
+              data = v$parks,
+              color = ~col,
+              fillOpacity = ~ifelse(col == "green", 0.6, 1),
+              group = "parks",
+              label = ~name,
+              highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
+            )
+          
+        } else {
+          v$msg <- "Sorry, we couldn't find any parks there!"
+        }
+        
         
       }
       
@@ -229,15 +236,21 @@ server <- function(input, output, session) {
           v$parks <- parks %>%
             dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
           
-          leafletProxy("map1") %>%
-            addPolygons(
-              data = v$parks,
-              color = ~col,
-              fillOpacity = ~ifelse(col == "green", 0.6, 1),
-              group = "parks",
-              label = ~name,
-              highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
-            )
+          if (nrow(v$parks) > 0) {
+            
+            leafletProxy("map1") %>%
+              addPolygons(
+                data = v$parks,
+                color = ~col,
+                fillOpacity = ~ifelse(col == "green", 0.6, 1),
+                group = "parks",
+                label = ~name,
+                highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
+              )
+            
+          } else {
+            v$msg <- "Sorry, we couldn't find any parks there!"
+          }
         }
         
         
@@ -269,7 +282,7 @@ server <- function(input, output, session) {
       clearGroup(group = "overlappy") %>% 
       addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
     
-    # print(v$show_parks)
+
     
     if (v$show_parks) {
       
@@ -281,15 +294,21 @@ server <- function(input, output, session) {
         v$parks <- parks %>%
           dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
         
-        leafletProxy("map1") %>%
-          addPolygons(
-            data = v$parks,
-            color = ~col,
-            fillOpacity = ~ifelse(col == "green", 0.6, 1),
-            group = "parks",
-            label = ~name,
-            highlightOptions = highlightOptions(color = "white", weight = 3, fillOpacity = 0.8, opacity = 1, bringToFront = TRUE)
-          )
+        if (nrow(v$parks) > 0) {
+          
+          leafletProxy("map1") %>%
+            addPolygons(
+              data = v$parks,
+              color = ~col,
+              fillOpacity = ~ifelse(col == "green", 0.6, 1),
+              group = "parks",
+              label = ~name,
+              highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
+            )
+          
+        } else {
+          v$msg <- "Sorry, we couldn't find any parks there!"
+        }
         
       } else {
         v$parks <- list()
