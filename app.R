@@ -79,6 +79,9 @@ ui <- fluidPage(
   ),
   fluidRow(
     column(12, p("Final apologies - graphic (and web) design is not my passion."))
+  ),
+  fluidRow(
+    column(12, a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter"))
   )
 )
 
