@@ -65,7 +65,9 @@ calculate_intersections <- function(polygons, marker_count) {
 
 
 ui <- fluidPage(
-  tags$head(tags$link(rel="shortcut icon", href="/favicon.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="/favicon.ico"), tags$style(HTML(".leaflet-container {
+  cursor: auto !important;
+}"))),
   titlePanel("Sydney picnic party"),
   fluidRow(
     column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
@@ -76,7 +78,7 @@ ui <- fluidPage(
     column(12, h3(textOutput("msg")))
   ),
   fluidRow(
-    column(12, align = "center", leafletOutput("map1", height = 800, width = "80%"))
+    column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
   ),
   fluidRow(
     column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in additional with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
@@ -94,8 +96,8 @@ server <- function(input, output, session) {
   
   showModal(modalDialog(
     title = "Welcome to the Sydney picnic map!",
-    p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)"),
-    p("The map will show the area that everyone can reach in red"),
+    p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
+    p("The map will show the area that everyone can reach in red."),
     p("Click the 'show parks' button to find a nice grassy spot to meet!"),
     footer = a(href = "https://www.nsw.gov.au/covid-19/rules/greater-sydney#outdoor-gatherings", target = "_blank", "See the NSW government website for more details."),
     easyClose = TRUE
@@ -108,7 +110,7 @@ server <- function(input, output, session) {
       addProviderTiles("CartoDB") %>%
       addScaleBar(position = "bottomright", options = scaleBarOptions(maxWidth = 200, imperial = FALSE)) %>% 
       fitBounds(151.1037661745509, -33.8186205182385, 151.30555830654728, -33.913499212816504) %>% 
-      addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas")
+      addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
   })
   
   output$msg <- renderText(v$msg)
@@ -136,7 +138,7 @@ server <- function(input, output, session) {
         
         
         leafletProxy("map1") %>%
-          addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", v$marker_count), group = "areas") %>% 
+          addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", v$marker_count), group = "areas", options = pathOptions(clickable = FALSE)) %>% 
           clearGroup(group = "parks") %>% 
           clearGroup(group = "overlappy") %>% 
           addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy") %>% 
@@ -282,7 +284,7 @@ server <- function(input, output, session) {
     
     leafletProxy("map1") %>%
       removeShape(layerId = paste0("poly_", input$map1_marker_dragend$id)) %>%
-      addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", input$map1_marker_dragend$id), group = "areas") %>% 
+      addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", input$map1_marker_dragend$id), group = "areas", options = pathOptions(clickable = FALSE)) %>% 
       clearGroup(group = "overlappy") %>% 
       addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
     
