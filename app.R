@@ -62,7 +62,8 @@ calculate_intersections <- function(polygons, marker_count) {
 
 
 ui <- fluidPage(
-  titlePanel("Sydney picnic party"),
+  titlePanel("Sydney picnic party", tags$head(tags$link(rel="shortcut icon", href="favicon.ico"))
+),
   fluidRow(
     column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
     column(2, actionButton("clearMarkers", "Start again")),
