@@ -82,7 +82,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
     column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
   ),
   fluidRow(
-    column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in additional with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
+    column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
   ),
   fluidRow(
     column(12, p("Final apologies - graphic (and web) design is not my passion."))
