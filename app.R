@@ -75,7 +75,10 @@ ui <- fluidPage(
   cursor: auto !important;
 }")
     ),
-    tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png")
+    tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
+    tags$meta(name = "author", content = "Nick Twort"),
+    tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
+    tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends")
   ),
   titlePanel("Sydney picnic party"),
   fluidRow(
