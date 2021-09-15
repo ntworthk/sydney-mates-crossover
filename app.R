@@ -125,14 +125,33 @@ server <- function(input, output, session) {
     )
   )
   
-  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks")
+  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks", qsp = NA)
+  
+  
+  qsps <- reactive({
+    parseQueryString(session$clientData$url_search)
+  })
+  
   
   output$map1 <- renderLeaflet({
-    leaflet() %>%
+    
+    l <- leaflet() %>%
       addProviderTiles("CartoDB") %>%
       addScaleBar(position = "bottomright", options = scaleBarOptions(maxWidth = 200, imperial = FALSE)) %>% 
       fitBounds(151.104, -33.819, 151.306, -33.913) %>% 
       addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
+    
+    qsp <- qsps()
+    qsp_found <- FALSE
+    
+    if (!is.null(qsp[["lng"]]) & !is.null(qsp[["lat"]])) {
+      ptlng <- as.numeric(qsp[["lng"]])
+      ptlat <- as.numeric(qsp[["lat"]])
+      l <- l %>% 
+        addMarkers(lng = ptlng, lat = ptlat)
+    }
+    
+    l
   })
   
   output$msg <- renderText(v$msg)
@@ -183,7 +202,7 @@ server <- function(input, output, session) {
           if (v$overlap) {
             # Calculate the parks in the overlap
             v$parks <- find_allowed_parks(v$overlappy)
-
+            
             # If there are parks, show them...
             if (nrow(v$parks) > 0) {
               
@@ -196,7 +215,7 @@ server <- function(input, output, session) {
                   label = ~name,
                   highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
                 )
-            
+              
               # ...and if not, send a message  
             } else {
               v$msg <- "Sorry, we couldn't find any parks there!"
@@ -267,7 +286,7 @@ server <- function(input, output, session) {
         leafletProxy("map1") %>%
           clearGroup("parks")
         
-      # ...and if they are not, turn them on
+        # ...and if they are not, turn them on
       } else {
         
         v$show_parks <- TRUE
