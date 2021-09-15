@@ -119,7 +119,7 @@ server <- function(input, output, session) {
       title = "Welcome to the Sydney picnic map!",
       p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
       p("The map will show the area that everyone can reach in red."),
-      p("Click the 'show parks' button to find a nice grassy spot to meet!"),
+      p("Click the 'show parks' button to find a nice grassy (or beachy) spot to meet!"),
       footer = a(href = "https://www.nsw.gov.au/covid-19/rules/greater-sydney#outdoor-gatherings", target = "_blank", "See the NSW government website for more details."),
       easyClose = TRUE
     )
