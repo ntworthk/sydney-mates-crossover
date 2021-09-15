@@ -65,6 +65,12 @@ calculate_intersections <- function(polygons, marker_count) {
   
 }
 
+find_allowed_parks <- function(overall_area) {
+  
+  parks %>%
+    dplyr::filter(st_intersects(geometry, overall_area, sparse = FALSE))
+  
+}
 
 ui <- fluidPage(
   theme = shinytheme("flatly"),
@@ -176,9 +182,8 @@ server <- function(input, output, session) {
           # ...and if there is an overlap
           if (v$overlap) {
             # Calculate the parks in the overlap
-            v$parks <- parks %>%
-              dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
-            
+            v$parks <- find_allowed_parks(v$overlappy)
+
             # If there are parks, show them...
             if (nrow(v$parks) > 0) {
               
@@ -269,8 +274,7 @@ server <- function(input, output, session) {
         v$parks_message <- "Hide parks"
         
         if (v$overlap) {
-          v$parks <- parks %>%
-            dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+          v$parks <- find_allowed_parks(v$overlappy)
           
           if (nrow(v$parks) > 0) {
             
@@ -327,8 +331,7 @@ server <- function(input, output, session) {
       
       if (nrow(v$overlappy) > 0) {
         
-        v$parks <- parks %>%
-          dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+        v$parks <- find_allowed_parks(v$overlappy)
         
         if (nrow(v$parks) > 0) {
           
