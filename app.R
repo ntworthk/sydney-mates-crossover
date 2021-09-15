@@ -65,10 +65,18 @@ calculate_intersections <- function(polygons, marker_count) {
 }
 
 
-ui <- fluidPage(theme = shinytheme("flatly"),
-  tags$head(tags$link(rel="shortcut icon", href="/favicon.ico"), tags$style(HTML(".leaflet-container {
+ui <- fluidPage(
+  theme = shinytheme("flatly"),
+  tags$head(
+    tags$link(rel="shortcut icon", href="/favicon.ico"), 
+    tags$style(
+      HTML(
+        ".leaflet-container {
   cursor: auto !important;
-}"))),
+}")
+    ),
+    tags$meta(name = "image", property = "og:image", content="/syd-picnic-image.png")
+  ),
   titlePanel("Sydney picnic party"),
   fluidRow(
     column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
@@ -289,7 +297,7 @@ server <- function(input, output, session) {
       clearGroup(group = "overlappy") %>% 
       addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
     
-
+    
     
     if (v$show_parks) {
       
