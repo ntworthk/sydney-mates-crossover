@@ -107,7 +107,7 @@ fluidRow(
   column(12, p("Final apologies - graphic (and web) design is not my passion."))
 ),
 fluidRow(
-  column(12, a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter"))
+  column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
 )
 )
 
