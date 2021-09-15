@@ -75,7 +75,7 @@ ui <- fluidPage(
   cursor: auto !important;
 }")
     ),
-    tags$meta(name = "image", property = "og:image", content="/syd-picnic-image.png")
+    tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png")
   ),
   titlePanel("Sydney picnic party"),
   fluidRow(
