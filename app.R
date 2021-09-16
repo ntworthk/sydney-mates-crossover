@@ -96,6 +96,9 @@ fluidRow(
   column(2, actionButton("showParks", textOutput("parks_message")))
 ),
 fluidRow(
+  column(6, p("Looking for a map for Melbourne? That's", a(href = "https://picnicnear.me/vic", "here!")))
+),
+fluidRow(
   column(12, h3(textOutput("msg")))
 ),
 fluidRow(
