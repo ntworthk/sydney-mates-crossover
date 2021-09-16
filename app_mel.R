@@ -64,6 +64,7 @@ ui <- fluidPage(
   cursor: auto !important;
 }")
     ),
+includeHTML(("google-analytics.html")),
 tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
 tags$meta(name = "author", content = "Nick Twort"),
 tags$meta(name = "title", property = "og:title", content = "Melbourne picnic radius"),
