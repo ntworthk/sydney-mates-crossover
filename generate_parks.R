@@ -34,11 +34,13 @@ greater_pois <- lapply(greater_cities, function(city) {
   
   city_parks <- parks %>% 
     filter(fclass %in% c("park", "allotments", "heath", "meadow", "nature_reserve", "recreation_ground")) %>%
-    filter(st_intersects(geometry, city, sparse = FALSE))
+    filter(st_intersects(geometry, city, sparse = FALSE)) %>% 
+    mutate(col = "green")
 
   city_beaches <- beaches %>% 
     filter(fclass %in% c("beach")) %>%
-    filter(st_intersects(geometry, city, sparse = FALSE))
+    filter(st_intersects(geometry, city, sparse = FALSE)) %>% 
+    mutate(col = "#cdaa7d")
   
   bind_rows(city_parks, city_beaches) %>% 
     filter(is.na(name) | name != "Sydney Harbour National Park")
