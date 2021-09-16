@@ -7,6 +7,7 @@ library(shinythemes)
 lgas <- readRDS("lgas_small.rds")
 parks <- readRDS("sydney_parks.rds")
 ico <- makeAwesomeIcon()
+max_people <- 5
 
 generate_buffer <- function(point, radius) {
   point %>%
@@ -65,11 +66,29 @@ calculate_intersections <- function(polygons, marker_count) {
   
 }
 
+find_allowed_parks <- function(overall_area) {
+  
+  parks %>%
+    dplyr::filter(st_intersects(geometry, overall_area, sparse = FALSE))
+  
+}
 
-ui <- fluidPage(theme = shinytheme("flatly"),
-                tags$head(tags$link(rel="shortcut icon", href="/favicon.ico"), tags$style(HTML(".leaflet-container {
+ui <- fluidPage(
+  theme = shinytheme("flatly"),
+  tags$head(
+    tags$link(rel="shortcut icon", href="/favicon.ico"), 
+    tags$style(
+      HTML(
+        ".leaflet-container {
   cursor: auto !important;
-}"))),
+}")
+    ),
+tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
+tags$meta(name = "author", content = "Nick Twort"),
+tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
+tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends"),
+tags$meta(name = "twitter:card", content = "summary")
+  ),
 titlePanel("Sydney picnic party"),
 fluidRow(
   column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
@@ -89,21 +108,23 @@ fluidRow(
   column(12, p("Final apologies - graphic (and web) design is not my passion."))
 ),
 fluidRow(
-  column(12, a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter"))
+  column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
 )
 )
 
 
 server <- function(input, output, session) {
   
-  showModal(modalDialog(
-    title = "Welcome to the Sydney picnic map!",
-    p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
-    p("The map will show the area that everyone can reach in red."),
-    p("Click the 'show parks' button to find a nice grassy spot to meet!"),
-    footer = a(href = "https://www.nsw.gov.au/covid-19/rules/greater-sydney#outdoor-gatherings", target = "_blank", "See the NSW government website for more details."),
-    easyClose = TRUE
-  ))
+  showModal(
+    modalDialog(
+      title = "Welcome to the Sydney picnic map!",
+      p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
+      p("The map will show the area that everyone can reach in red."),
+      p("Click the 'show parks' button to find a nice grassy (or beachy) spot to meet!"),
+      footer = a(href = "https://www.nsw.gov.au/covid-19/rules/greater-sydney#outdoor-gatherings", target = "_blank", "See the NSW government website for more details."),
+      easyClose = TRUE
+    )
+  )
   
   v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks")
   
@@ -111,9 +132,10 @@ server <- function(input, output, session) {
     leaflet() %>%
       addProviderTiles("CartoDB") %>%
       addScaleBar(position = "bottomright", options = scaleBarOptions(maxWidth = 200, imperial = FALSE)) %>% 
-      fitBounds(151.1037661745509, -33.8186205182385, 151.30555830654728, -33.913499212816504) %>% 
+      fitBounds(151.104, -33.819, 151.306, -33.913) %>% 
       addGlPolylines(data = st_cast(lgas, "LINESTRING"), color = "black", weight = 0.1, opacity = 0.9, group = "lgas")
-      # addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
+    # addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
+    
   })
   
   output$msg <- renderText(v$msg)
@@ -122,24 +144,31 @@ server <- function(input, output, session) {
   
   observeEvent(input$map1_click, {
     
-    if (v$marker_count < 5) {
+    # Check that we can still add points
+    if (v$marker_count < max_people) {
       
+      # Only add new markers if there is currently an overlap
       if (v$overlap) {
+        
+        # Indicate that we are adding another marker
         v$marker_count <- v$marker_count + 1
         
         # Get point at click location
         pt <- st_sfc(st_point(c(input$map1_click$lng, input$map1_click$lat)), crs = 4326)
         
+        # Add the new point to the markers
         v$markers <- append(v$markers, list(pt))
         
         # Generate 5km buffer around point and LGA
         poly <- generate_allowed_area(pt)
         
+        # Add the new polygon to the polys
         v$polys <- append(v$polys, list(st_as_sf(poly)))
         
+        # Calculate new overlap
         v$overlappy <- calculate_intersections(v$polys, v$marker_count)
         
-        
+        # Add marker, polygon and new overlap to map
         leafletProxy("map1") %>%
           addGlPolylines(data = st_cast(poly, "LINESTRING"), color = "blue", opacity = 0.5, layerId = paste0("line_", v$marker_count), group = "areas") %>% 
           addGlPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", v$marker_count), group = "areas") %>% 
@@ -151,13 +180,34 @@ server <- function(input, output, session) {
           # addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy") %>%
           addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = v$marker_count, icon = ico)
         
+        # Check if there is an overlap
         v$overlap <- nrow(v$overlappy) > 0
         
+        # If we are showing the parks...
         if (v$show_parks) {
           
+          # ...and if there is an overlap
           if (v$overlap) {
-            v$parks <- parks %>%
-              dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+            # Calculate the parks in the overlap
+            v$parks <- find_allowed_parks(v$overlappy)
+            
+            # If there are parks, show them...
+            if (nrow(v$parks) > 0) {
+              
+              leafletProxy("map1") %>%
+                addPolygons(
+                  data = v$parks,
+                  color = ~col,
+                  fillOpacity = ~ifelse(col == "green", 0.6, 1),
+                  group = "parks",
+                  label = ~name,
+                  highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
+                )
+              
+              # ...and if not, send a message  
+            } else {
+              v$msg <- "Sorry, we couldn't find any parks there!"
+            }
             
           } else {
             v$parks <- list()
@@ -166,40 +216,18 @@ server <- function(input, output, session) {
         
       }
       
-      if (v$overlap & v$show_parks) {
-        
-        if (nrow(v$parks) > 0) {
-          
-          leafletProxy("map1") %>%
-            addPolygons(
-              data = v$parks,
-              color = ~col,
-              fillOpacity = ~ifelse(col == "green", 0.6, 1),
-              group = "parks",
-              label = ~name,
-              highlightOptions = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)
-            )
-          
-        } else {
-          v$msg <- "Sorry, we couldn't find any parks there!"
-        }
-        
-        
-      }
-      
-      
-      
-      
-      
+      # Re-check for an overlap
       v$overlap <- nrow(v$overlappy) > 0
       
+      # If no overlap, send a message
       if(!v$overlap) {
         v$msg <- "No overlap! Bugger. Click the button to start again or drag the markers until they overlap."
       }
       
-      
+      # If already at max people, send that message
     } else {
-      v$msg <- "Sadly, you can't have more than 5 people! Click the button to start again."
+      
+      v$msg <- glue::glue("Sadly, you can't have more than {max_people} people! Click the button to start again.")
     }
     
     
@@ -207,47 +235,53 @@ server <- function(input, output, session) {
     
   })
   
+  # Button to clear the map
   observeEvent(input$clearMarkers, {
     
-    
+    # Remove markers, areas, overlap and parks from map
     leafletProxy("map1") %>%
       clearMarkers() %>%
       clearGroup("areas") %>%
       clearGroup("overlappy") %>% 
       clearGroup("parks")
     
+    # Reset reactive values
     v$polys <- list()
     v$msg <- ""
     v$overlap <- TRUE
+    v$overlappy <- NA
     v$marker_count <- 0
     v$markers <- list()
-    v$overlappy <- NA
+    v$parks <- list()
+    
   })
   
   
   observeEvent(input$showParks, {
     
+    # Check for no NAs in overlap
     if (!any(is.na(v$overlappy))) {
       
-      
+      # If parks are being shown, turn them off...
       if (v$show_parks) {
-        v$show_parks <- FALSE
         
+        v$show_parks <- FALSE
         v$parks_message <- "Show parks"
         
-        v$parks <- NA
+        v$parks <- list()
         
+        # Remove parks from the map
         leafletProxy("map1") %>%
           clearGroup("parks")
         
+        # ...and if they are not, turn them on
       } else {
         
         v$show_parks <- TRUE
         v$parks_message <- "Hide parks"
         
         if (v$overlap) {
-          v$parks <- parks %>%
-            dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+          v$parks <- find_allowed_parks(v$overlappy)
           
           if (nrow(v$parks) > 0) {
             
@@ -298,8 +332,7 @@ server <- function(input, output, session) {
       addGlPolylines(data = st_cast(v$overlappy, "LINESTRING"), color = "red", opacity = 0.5, group = "overlappy") %>%
       addGlPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
     
-    
-    
+
     if (v$show_parks) {
       
       leafletProxy("map1") %>%
@@ -307,8 +340,7 @@ server <- function(input, output, session) {
       
       if (nrow(v$overlappy) > 0) {
         
-        v$parks <- parks %>%
-          dplyr::filter(st_intersects(geometry, v$overlappy, sparse = FALSE))
+        v$parks <- find_allowed_parks(v$overlappy)
         
         if (nrow(v$parks) > 0) {
           
