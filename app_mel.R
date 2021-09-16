@@ -5,7 +5,8 @@ library(shinythemes)
 
 parks <- readRDS("melbourne_parks.rds")
 ico <- makeAwesomeIcon()
-max_people <- 2
+max_people <- 5
+max_distance <- 10000
 
 generate_buffer <- function(point, radius) {
   point %>%
@@ -17,7 +18,7 @@ generate_buffer <- function(point, radius) {
 generate_allowed_area <- function(point) {
   
   # 5km radius
-  poly <- generate_buffer(point, 5000)
+  poly <- generate_buffer(point, max_distance)
 
   poly
   
@@ -66,12 +67,12 @@ ui <- fluidPage(
 tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
 tags$meta(name = "author", content = "Nick Twort"),
 tags$meta(name = "title", property = "og:title", content = "Melbourne picnic radius"),
-tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with a friend"),
+tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends."),
 tags$meta(name = "twitter:card", content = "summary")
   ),
 titlePanel("Melbourne picnic party"),
 fluidRow(
-  column(6, p("Click on the map to enter the home locations of you and a friend. The map will show where each person can travel - within 5km of their home. The red area is within 5km of both people.")),
+  column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 10km of their home. The red area is within 10km of all people. Don't forget, you all need to be fully vaccinated for this to apply (otherwise the limit is 2 people)!")),
   column(2, actionButton("clearMarkers", "Start again")),
   column(2, actionButton("showParks", textOutput("parks_message")))
 ),
@@ -98,7 +99,7 @@ server <- function(input, output, session) {
   showModal(
     modalDialog(
       title = "Welcome to the Melbourne picnic map!",
-      p("This tool can help you plan where you can meet a friend for a picnic. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
+      p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
       p("The map will show the area that everyone can reach in red."),
       p("Click the 'show parks' button to find a nice grassy (or beachy) spot to meet!"),
       footer = a(href = "https://www.coronavirus.vic.gov.au/coronavirus-covidsafe-settings", target = "_blank", "See the Vic government website for more details."),
@@ -112,7 +113,7 @@ server <- function(input, output, session) {
     leaflet() %>%
       addProviderTiles("CartoDB") %>%
       addScaleBar(position = "bottomright", options = scaleBarOptions(maxWidth = 200, imperial = FALSE)) %>% 
-      fitBounds(144.894038673397, -37.792639597413704, 145.06798002021765, -37.86800588241007)
+      fitBounds(144.8940, -37.7926, 145.0680, -37.8680)
   })
   
   output$msg <- renderText(v$msg)
