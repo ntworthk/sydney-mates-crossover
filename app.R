@@ -132,6 +132,47 @@ server <- function(input, output, session) {
     parseQueryString(session$clientData$url_search)
   })
   
+  check_latlon_params <- function(qsp_list) {
+    
+    params <- names(qsp_list)
+    
+    marker_candidates <- unique(gsub("[A-z]+", "", params))
+    
+    marker_pts <- lapply(seq_along(marker_candidates), function(i) {
+      
+      # Get current marker number
+      marker_number <- marker_candidates[i]
+      
+      # If lat AND lng exists, return it
+      if (all(paste0(c("lat", "lng"), marker_number) %in% params)) {
+        
+        lng <- as.numeric(qsp_list[[paste0("lng", marker_number)]])
+        lat <- as.numeric(qsp_list[[paste0("lat", marker_number)]])
+        
+        return(st_sfc(st_point(c(lng, lat)), crs = 4326))
+        
+      } else {
+        return(NULL)
+      }
+      
+    })
+    
+    # Remove NULLs
+    marker_pts <- purrr::compact(marker_pts)
+    
+    # Take only top 5 points
+    marker_pts <- purrr::compact(marker_pts[1:5])
+    
+    # Return
+    return(purrr::compact(marker_pts))
+    
+  }
+  
+  parse_qsps <- function(qsp_list) {
+    
+    check_latlon_params(qsp_list)
+    
+  }
   
   output$map1 <- renderLeaflet({
     
@@ -141,16 +182,15 @@ server <- function(input, output, session) {
       fitBounds(151.104, -33.819, 151.306, -33.913) %>% 
       addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
     
-    qsp <- qsps()
-    qsp_found <- FALSE
+    new_markers <- parse_qsps(qsps())
     
-    if (!is.null(qsp[["lng"]]) & !is.null(qsp[["lat"]])) {
-      ptlng <- as.numeric(qsp[["lng"]])
-      ptlat <- as.numeric(qsp[["lat"]])
-      l <- l %>% 
-        addMarkers(lng = ptlng, lat = ptlat)
+    if (length(new_markers) > 0) {
+      for (marker_ in new_markers) {
+        l <- l %>% 
+          addMarkers(data = marker_)
+      }
     }
-    
+
     l
   })
   
