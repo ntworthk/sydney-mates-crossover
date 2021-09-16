@@ -5,7 +5,7 @@ library(shinythemes)
 
 parks <- readRDS("melbourne_parks.rds")
 ico <- makeAwesomeIcon()
-max_people <- 5
+max_people <- 2
 max_distance <- 10000
 
 generate_buffer <- function(point, radius) {
@@ -72,7 +72,7 @@ tags$meta(name = "twitter:card", content = "summary")
   ),
 titlePanel("Melbourne picnic party"),
 fluidRow(
-  column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 10km of their home. The red area is within 10km of all people. Don't forget, you all need to be fully vaccinated for this to apply (otherwise the limit is 2 people)!")),
+  column(6, p("Click on the map to enter the home locations of you and another houehold. The map will show where each household can travel - within 10km of their home. The red area is within 10km of all people. Don't forget, you all need to be fully vaccinated for you to have 5 people from 2 households (otherwise the limit is 2 people)!")),
   column(2, actionButton("clearMarkers", "Start again")),
   column(2, actionButton("showParks", textOutput("parks_message")))
 ),
@@ -201,7 +201,7 @@ server <- function(input, output, session) {
       # If already at max people, send that message
     } else {
       
-      v$msg <- glue::glue("Sadly, you can't have more than {max_people} people! Click the button to start again.")
+      v$msg <- glue::glue("Sadly, you can't have more than {max_people} households! Click the button to start again.")
     }
     
     
