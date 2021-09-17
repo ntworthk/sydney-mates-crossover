@@ -83,6 +83,13 @@ ui <- fluidPage(
 }")
     ),
 includeHTML(("google-analytics.html")),
+tags$script(HTML(
+  "$(document).on('shiny:inputchanged', function(event) {
+       if (event.name === 'showParks') {
+         gtag('event', 'input', event.name, event.value);
+       }
+     });"
+)),
 tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
 tags$meta(name = "author", content = "Nick Twort"),
 tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
