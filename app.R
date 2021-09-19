@@ -98,7 +98,7 @@ tags$meta(name = "twitter:card", content = "summary")
   ),
 titlePanel("Sydney picnic party"),
 fluidRow(
-  column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
+  column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA. The red area is where everyone can go. Don't forget, you need to be fully vaccinated for this to apply!")),
   column(2, actionButton("clearMarkers", "Start again")),
   column(2, actionButton("showParks", textOutput("parks_message")))
 ),
