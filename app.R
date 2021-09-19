@@ -136,6 +136,10 @@ server <- function(input, output, session) {
     )
   )
   
+  create_popup_div <- function(id) {
+    paste0('<div style="text-align:center;">Drag to move<br/><a id="friend_marker_click" href="#" class="action-button" onclick="{Shiny.onInputChange(&quot;friend_marker_click&quot;, ', id, ');}">Click to delete</button></div>')
+  }
+  
   v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks")
   
   output$map1 <- renderLeaflet({
@@ -182,7 +186,7 @@ server <- function(input, output, session) {
           clearGroup(group = "parks") %>% 
           clearGroup(group = "overlappy") %>% 
           addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy") %>% 
-          addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = v$marker_count, icon = ico)
+          addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = as.character(v$marker_count), icon = ico, popup = create_popup_div(v$marker_count))
         
         # Check if there is an overlap
         v$overlap <- nrow(v$overlappy) > 0
@@ -238,6 +242,18 @@ server <- function(input, output, session) {
     
     
   })
+  
+  
+  observeEvent(input$friend_marker_click, {
+    
+    print(input$friend_marker_click)
+    
+    leafletProxy("map1") %>% 
+      removeMarker(layerId = as.character(input$friend_marker_click))
+    
+  })
+  
+  
   
   # Button to clear the map
   observeEvent(input$clearMarkers, {
@@ -377,7 +393,12 @@ server <- function(input, output, session) {
     
     
   })
+
   
 }
+
+
+
+
 
 shinyApp(ui, server)
