@@ -201,6 +201,13 @@ server <- function(input, output, session) {
     generated_url
   }
   
+  generate_initial_values <- function(markers, polys) {
+    # v$qsps <- generate_url()
+    # v$markers <- markers
+    v$polys <- polys
+    return(TRUE)
+  }
+  
   # Add clipboard buttons
   output$copy_url <- renderUI({
     rclipButton("clipbtn", " Copy link to your map", v$qsps, icon("external-link-alt"))
@@ -222,30 +229,22 @@ server <- function(input, output, session) {
     poly_list <- list()
     
     if (length(new_markers) > 0) {
-      print("yes")
-      print(new_markers)
+
       for (i in seq_along(new_markers)) {
-        print(i)
+
         marker_ <- new_markers[[i]]
-        print(marker_)
-        # v$markers <- append(v$markers, list(marker_))
-        
+
         # Generate 5km buffer around point and LGA
         poly <- generate_allowed_area(marker_)
         poly_list <- append(poly_list, list(st_as_sf(poly)))
-        # Add the new polygon to the polys
-        # v$polys <- append(v$polys, list(st_as_sf(poly)))
 
-        l <- l %>% 
-          addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE)) %>%
-          addAwesomeMarkers(data = marker_, options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
+        # l <- l %>%
+        #   addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE)) %>%
+        #   addAwesomeMarkers(data = marker_, options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
       }
     
-    # v$qsps <- generate_url()
-    
-    # v$markers <- new_markers
-    v$polys <- poly_list
-    
+    generate_initial_values(new_markers, poly_list)
+      
     # Calculate new overlap
     overlappo <- calculate_intersections(poly_list, v$marker_count)
 
