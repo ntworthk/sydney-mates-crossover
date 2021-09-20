@@ -84,36 +84,36 @@ ui <- fluidPage(
   cursor: auto !important;
 }")
     ),
-tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
-tags$meta(name = "author", content = "Nick Twort"),
-tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
-tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends"),
-tags$meta(name = "twitter:card", content = "summary")
+    tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
+    tags$meta(name = "author", content = "Nick Twort"),
+    tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
+    tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends"),
+    tags$meta(name = "twitter:card", content = "summary")
   ),
-titlePanel("Sydney picnic party"),
-fluidRow(
-  column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
-  column(2, actionButton("clearMarkers", "Start again")),
-  column(2, actionButton("showParks", textOutput("parks_message")))
-),
-fluidRow(
-  column(12, actionButton("generate_qsp", "Export"))
-),
-fluidRow(
-  column(12, h3(textOutput("msg")))
-),
-fluidRow(
-  column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
-),
-fluidRow(
-  column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
-),
-fluidRow(
-  column(12, p("Final apologies - graphic (and web) design is not my passion."))
-),
-fluidRow(
-  column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
-)
+  titlePanel("Sydney picnic party"),
+  fluidRow(
+    column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
+    column(2, actionButton("clearMarkers", "Start again")),
+    column(2, actionButton("showParks", textOutput("parks_message")))
+  ),
+  fluidRow(
+    column(12, uiOutput("copy_url"))
+  ),
+  fluidRow(
+    column(12, h3(textOutput("msg")))
+  ),
+  fluidRow(
+    column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
+  ),
+  fluidRow(
+    column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
+  ),
+  fluidRow(
+    column(12, p("Final apologies - graphic (and web) design is not my passion."))
+  ),
+  fluidRow(
+    column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
+  )
 )
 
 
@@ -130,7 +130,7 @@ server <- function(input, output, session) {
     )
   )
   
-  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks", qsp = NA)
+  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks", qsp = NA, qsps = "")
   
   
   qsps <- reactive({
@@ -191,11 +191,19 @@ server <- function(input, output, session) {
     
   }
   
-  observeEvent(input$generate_qsp, {
-    qsp <- generate_qsps(v$markers)
-    generated_url <- paste0(session$clientData$url_protocol, "//", session$clientData$url_hostname, ":", session$clientData$url_port, session$clientData$url_pathname, "?", qsp)
-    print(generated_url)
-    clipr::write_clip(generated_url)
+  generate_url <- function() {
+    if (v$marker_count > 0) {
+      qsp <- generate_qsps(v$markers)
+      generated_url <- paste0(session$clientData$url_protocol, "//", session$clientData$url_hostname, ":", session$clientData$url_port, session$clientData$url_pathname, "?", qsp)
+    } else {
+      generated_url <- paste0(session$clientData$url_protocol, "//", session$clientData$url_hostname, ":", session$clientData$url_port, session$clientData$url_pathname)
+    }
+    generated_url
+  }
+  
+  # Add clipboard buttons
+  output$copy_url <- renderUI({
+    rclipButton("clipbtn", " Share link", v$qsps, icon("clipboard"))
   })
   
   output$map1 <- renderLeaflet({
@@ -214,7 +222,7 @@ server <- function(input, output, session) {
           addMarkers(data = marker_)
       }
     }
-
+    
     l
   })
   
@@ -306,7 +314,7 @@ server <- function(input, output, session) {
       v$msg <- glue::glue("Sadly, you can't have more than {max_people} people! Click the button to start again.")
     }
     
-    
+    v$qsps <- generate_url()
     
     
   })
