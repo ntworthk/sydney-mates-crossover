@@ -97,13 +97,13 @@ ui <- fluidPage(
     column(2, actionButton("showParks", textOutput("parks_message")))
   ),
   fluidRow(
-    column(12, uiOutput("copy_url"))
-  ),
-  fluidRow(
     column(12, h3(textOutput("msg")))
   ),
   fluidRow(
     column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
+  ),
+  fluidRow(
+    column(12, uiOutput("copy_url"), style='padding:10px;')
   ),
   fluidRow(
     column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
@@ -130,7 +130,7 @@ server <- function(input, output, session) {
     )
   )
   
-  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks", qsp = NA, qsps = "")
+  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks", qsp = NA, qsps = "https://picnicnear.me")
   
   
   qsps <- reactive({
@@ -203,10 +203,11 @@ server <- function(input, output, session) {
   
   # Add clipboard buttons
   output$copy_url <- renderUI({
-    rclipButton("clipbtn", " Share link", v$qsps, icon("clipboard"))
+    rclipButton("clipbtn", " Copy link to your map", v$qsps, icon("external-link-alt"))
   })
   
   output$map1 <- renderLeaflet({
+    
     
     l <- leaflet() %>%
       addProviderTiles("CartoDB") %>%
@@ -214,13 +215,43 @@ server <- function(input, output, session) {
       fitBounds(151.104, -33.819, 151.306, -33.913) %>% 
       addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
     
+    # browser()
     new_markers <- parse_qsps(qsps())
     
+    v$marker_count <- length(new_markers)
+    poly_list <- list()
+    
     if (length(new_markers) > 0) {
-      for (marker_ in new_markers) {
+      print("yes")
+      print(new_markers)
+      for (i in seq_along(new_markers)) {
+        print(i)
+        marker_ <- new_markers[[i]]
+        print(marker_)
+        # v$markers <- append(v$markers, list(marker_))
+        
+        # Generate 5km buffer around point and LGA
+        poly <- generate_allowed_area(marker_)
+        poly_list <- append(poly_list, list(st_as_sf(poly)))
+        # Add the new polygon to the polys
+        # v$polys <- append(v$polys, list(st_as_sf(poly)))
+
         l <- l %>% 
-          addMarkers(data = marker_)
+          addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE)) %>%
+          addAwesomeMarkers(data = marker_, options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
       }
+    
+    # v$qsps <- generate_url()
+    
+    # v$markers <- new_markers
+    v$polys <- poly_list
+    
+    # Calculate new overlap
+    overlappo <- calculate_intersections(poly_list, v$marker_count)
+
+    l <- l %>%
+      addPolygons(data = overlappo, color = "red", fillOpacity = 0.5, group = "overlappy")
+ 
     }
     
     l
@@ -232,6 +263,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$map1_click, {
     
+    # browser()
     # Check that we can still add points
     if (v$marker_count < max_people) {
       
@@ -337,6 +369,8 @@ server <- function(input, output, session) {
     v$marker_count <- 0
     v$markers <- list()
     v$parks <- list()
+    
+    v$qsps <- generate_url()
     
   })
   
@@ -455,6 +489,7 @@ server <- function(input, output, session) {
       v$msg <- ""
     }
     
+    v$qsps <- generate_url()
     
   })
   
