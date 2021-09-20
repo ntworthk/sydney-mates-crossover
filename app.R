@@ -143,7 +143,8 @@ server <- function(input, output, session) {
       addProviderTiles("CartoDB") %>%
       addScaleBar(position = "bottomright", options = scaleBarOptions(maxWidth = 200, imperial = FALSE)) %>% 
       fitBounds(151.104, -33.819, 151.306, -33.913) %>% 
-      addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE))
+      addPolygons(data = lgas, fill = FALSE, weight = 1, color = "black", opacity = 0.2, group = "lgas", options = pathOptions(clickable = FALSE)) %>% 
+      leaflet.extras::addSearchOSM()
   })
   
   output$msg <- renderText(v$msg)
