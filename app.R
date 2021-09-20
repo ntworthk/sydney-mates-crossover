@@ -2,6 +2,7 @@ library(shiny)
 library(leaflet)
 library(sf)
 library(shinythemes)
+library(rclipboard)
 
 lgas <- readRDS("lgas_small.rds")
 parks <- readRDS("sydney_parks.rds")
@@ -74,6 +75,7 @@ find_allowed_parks <- function(overall_area) {
 
 ui <- fluidPage(
   theme = shinytheme("flatly"),
+  rclipboardSetup(),
   tags$head(
     tags$link(rel="shortcut icon", href="/favicon.ico"), 
     tags$style(
@@ -93,6 +95,9 @@ fluidRow(
   column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
   column(2, actionButton("clearMarkers", "Start again")),
   column(2, actionButton("showParks", textOutput("parks_message")))
+),
+fluidRow(
+  column(12, actionButton("generate_qsp", "Export"))
 ),
 fluidRow(
   column(12, h3(textOutput("msg")))
@@ -173,6 +178,25 @@ server <- function(input, output, session) {
     check_latlon_params(qsp_list)
     
   }
+  
+  
+  generate_qsps <- function(markers) {
+    
+    
+    coords <- unlist(markers)
+    
+    qsp <- paste0(c("lng", "lat"), sort(rep.int(seq.int(from = 1, to = length(coords)/2, by = 1), 2)), "=", round(coords, digits = 4), collapse = "&")
+    
+    qsp
+    
+  }
+  
+  observeEvent(input$generate_qsp, {
+    qsp <- generate_qsps(v$markers)
+    generated_url <- paste0(session$clientData$url_protocol, "//", session$clientData$url_hostname, ":", session$clientData$url_port, session$clientData$url_pathname, "?", qsp)
+    print(generated_url)
+    clipr::write_clip(generated_url)
+  })
   
   output$map1 <- renderLeaflet({
     
