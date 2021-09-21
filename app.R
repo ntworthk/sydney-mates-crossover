@@ -209,21 +209,21 @@ server <- function(input, output, session) {
   }
   
   
-  init_marker_count <- function() {
+  init_marker_count <- function(markers) {
     
-    length(init_markers())
+    length(markers)
     
   }
   
   
-  init_polys <- function() {
+  init_polys <- function(markers) {
     
     
     poly_list <- list()
     
-    if (init_marker_count() > 0) {
+    if (length(markers) > 0) {
       
-      initial_markers <- init_markers()
+      initial_markers <- markers
       
       for (i in seq_along(initial_markers)) {
         
@@ -244,12 +244,12 @@ server <- function(input, output, session) {
     
   }
   
-  init_overlap <- function() {
+  init_overlap <- function(markers, polys) {
     
     overlappy <- NA
     
-    if (init_marker_count() > 0) {
-      overlappy <- calculate_intersections(init_polys(), init_marker_count())
+    if (length(markers) > 0) {
+      overlappy <- calculate_intersections(polys, length(markers))
       
       # leafletProxy("map1") %>%
         # addPolygons(data = overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
@@ -259,8 +259,8 @@ server <- function(input, output, session) {
   }
   
 
-  initial_overlap <- function() {
-    is.na(init_overlap()) || nrow(init_overlap()) > 0
+  initial_overlap <- function(markers, polys) {
+    is.na(init_overlap(markers, polys)) || nrow(init_overlap(markers, polys)) > 0
   }
   
   v <- reactiveValues(
@@ -285,13 +285,13 @@ server <- function(input, output, session) {
     
     v$markers <- init_markers()
     
-    v$marker_count <- init_marker_count()
+    v$marker_count <- init_marker_count(v$markers)
     
-    v$polys <- init_polys()
+    v$polys <- init_polys(v$markers)
     
-    v$overlappy <- init_overlap()
+    v$overlappy <- init_overlap(v$markers, v$polys)
     
-    v$overlap <- initial_overlap()
+    v$overlap <- initial_overlap(v$markers, v$polys)
     
     if (v$marker_count > 0) {
       for (i in seq_along(v$markers)) {
