@@ -86,6 +86,14 @@ ui <- fluidPage(
   cursor: auto !important;
 }")
     ),
+    includeHTML(("google-analytics.html")),
+    tags$script(HTML(
+      "$(document).on('shiny:inputchanged', function(event) {
+       if (event.name === 'showParks') {
+         gtag('event', 'input', event.name, event.value);
+       }
+     });"
+    )),
     tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
     tags$meta(name = "author", content = "Nick Twort"),
     tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
@@ -94,9 +102,12 @@ ui <- fluidPage(
   ),
   titlePanel("Sydney picnic party"),
   fluidRow(
-    column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA (unless it's an LGA of concern). The red area is within 5km of all people. Don't forget, you need to be fully vaccinated for this to apply!")),
+    column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA. The red area is where everyone can go. Don't forget, you need to be fully vaccinated for this to apply!")),
     column(2, actionButton("clearMarkers", "Start again")),
     column(2, actionButton("showParks", textOutput("parks_message")))
+  ),
+  fluidRow(
+    column(6, p("Looking for a map for Melbourne? That's", a(href = "https://picnicnear.me/vic", "here!")))
   ),
   fluidRow(
     column(12, h3(textOutput("msg")))
@@ -147,10 +158,10 @@ server <- function(input, output, session) {
   })
   
   qsps <- reactive({
-
+    
     tmp <- parseQueryString(session$clientData$url_search)
     tmp
-
+    
   })
   # 
   
@@ -200,12 +211,6 @@ server <- function(input, output, session) {
     
     markers <- parse_qsps(qsps())
     
-    if (length(markers) > 0) {
-      for (i in seq_along(markers)) {
-        # leafletProxy("map1") %>% 
-          # addAwesomeMarkers(data = markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
-      }
-    } 
     markers
     
   }
@@ -236,7 +241,7 @@ server <- function(input, output, session) {
         poly_list <- append(poly_list, list(st_as_sf(poly)))
         
         # leafletProxy("map1") %>%
-          # addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
+        # addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
         
       }
       
@@ -254,13 +259,13 @@ server <- function(input, output, session) {
       overlappy <- calculate_intersections(polys, length(markers))
       
       # leafletProxy("map1") %>%
-        # addPolygons(data = overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
+      # addPolygons(data = overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
     } 
     
     overlappy
   }
   
-
+  
   initial_overlap <- function(markers, polys) {
     is.na(init_overlap(markers, polys)) || nrow(init_overlap(markers, polys)) > 0
   }
@@ -277,12 +282,12 @@ server <- function(input, output, session) {
     parks_message = "Show parks",
     qsp = NA,
     qsps = "https://picnicnear.me"
-    )
+  )
   
   
   
   observeEvent(input$seed, {
-
+    
     updateTextInput(inputId = "seed", value = "")
     
     v$markers <- init_markers()
@@ -297,9 +302,9 @@ server <- function(input, output, session) {
     
     if (v$marker_count > 0) {
       for (i in seq_along(v$markers)) {
-      leafletProxy("map1") %>% 
-        addAwesomeMarkers(data = v$markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico) %>% 
-        addPolygons(data = v$polys[[i]], color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
+        leafletProxy("map1") %>% 
+          addAwesomeMarkers(data = v$markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico) %>% 
+          addPolygons(data = v$polys[[i]], color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
         
       }
       if (v$overlap) {
@@ -308,7 +313,7 @@ server <- function(input, output, session) {
       }
     }
     
-
+    
     
   }, once = TRUE)
   
