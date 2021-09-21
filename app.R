@@ -113,6 +113,9 @@ ui <- fluidPage(
   ),
   fluidRow(
     column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
+  ),
+  fluidRow(
+    column(12, p(textInput("seed", label = "yo:", value = "searching")), style = "visibility: hidden;")
   )
 )
 
@@ -142,40 +145,12 @@ server <- function(input, output, session) {
   })
   
   qsps <- reactive({
-    
-    parseQueryString(session$clientData$url_search)
-    
-    # new_markers <- parse_qsps(qspyo)
-    # 
-    # v$marker_count <- length(new_markers)
-    # 
-    # poly_list <- list()
-    # 
-    # if (length(new_markers) > 0) {
-    #   
-    #   for (i in seq_along(new_markers)) {
-    #     
-    #     marker_ <- new_markers[[i]]
-    #     
-    #     # Generate 5km buffer around point and LGA
-    #     poly <- generate_allowed_area(marker_)
-    #     poly_list <- append(poly_list, list(st_as_sf(poly)))
-    #     
-    #     l <- leafletProxy("map1") %>%
-    #       addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE)) %>%
-    #       addAwesomeMarkers(data = marker_, options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
-    #   }
-    #   
-    #   v$markers <- new_markers
-    #   v$polys <- poly_list
-    #   v$qsps <- generate_url()
-    # }
-    # 
-    # 
-    # qspyo
-    
+
+    tmp <- parseQueryString(session$clientData$url_search)
+    tmp
+
   })
-  
+  # 
   
   check_latlon_params <- function(qsp_list) {
     
@@ -225,31 +200,30 @@ server <- function(input, output, session) {
     
     if (length(markers) > 0) {
       for (i in seq_along(markers)) {
-        leafletProxy("map1") %>% 
-          addAwesomeMarkers(data = markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
+        # leafletProxy("map1") %>% 
+          # addAwesomeMarkers(data = markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico)
       }
     } 
     markers
     
   }
   
-  initial_markers <- init_markers()
-  
   
   init_marker_count <- function() {
     
-    length(initial_markers)
+    length(init_markers())
     
   }
   
-  initial_marker_count <- init_marker_count()
   
   init_polys <- function() {
     
     
     poly_list <- list()
     
-    if (initial_marker_count > 0) {
+    if (init_marker_count() > 0) {
+      
+      initial_markers <- init_markers()
       
       for (i in seq_along(initial_markers)) {
         
@@ -259,8 +233,8 @@ server <- function(input, output, session) {
         poly <- generate_allowed_area(marker_)
         poly_list <- append(poly_list, list(st_as_sf(poly)))
         
-        leafletProxy("map1") %>%
-          addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
+        # leafletProxy("map1") %>%
+          # addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
         
       }
       
@@ -270,32 +244,71 @@ server <- function(input, output, session) {
     
   }
   
-  initial_polys <- init_polys()
-  
-  
   init_overlap <- function() {
     
     overlappy <- NA
     
-    if (initial_marker_count > 0) {
-      overlappy <- calculate_intersections(initial_polys, initial_marker_count)
+    if (init_marker_count() > 0) {
+      overlappy <- calculate_intersections(init_polys(), init_marker_count())
       
-      leafletProxy("map1") %>%
-        addPolygons(data = overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
+      # leafletProxy("map1") %>%
+        # addPolygons(data = overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
     } 
     
     overlappy
   }
   
-  initial_overlappy <- init_overlap()
+
+  initial_overlap <- function() {
+    is.na(init_overlap()) || nrow(init_overlap()) > 0
+  }
   
-  initial_overlap <- is.na(initial_overlappy) || nrow(initial_overlappy) > 0
+  v <- reactiveValues(
+    polys = list(),
+    msg = "",
+    overlap = TRUE,
+    overlappy = NA,
+    marker_count = 0,
+    markers = list(),
+    parks = list(),
+    show_parks = FALSE,
+    parks_message = "Show parks",
+    qsp = NA,
+    qsps = "https://picnicnear.me"
+    )
   
-  v <- reactiveValues(polys = initial_polys, msg = "", overlap = TRUE, overlappy = initial_overlappy, marker_count = initial_marker_count, markers = initial_markers, parks = list(), show_parks = FALSE, parks_message = "Show parks", qsp = NA, qsps = "https://picnicnear.me")
   
   
-  
-  
+  observeEvent(input$seed, {
+
+    updateTextInput(inputId = "seed", value = "")
+    
+    v$markers <- init_markers()
+    
+    v$marker_count <- init_marker_count()
+    
+    v$polys <- init_polys()
+    
+    v$overlappy <- init_overlap()
+    
+    v$overlap <- initial_overlap()
+    
+    if (v$marker_count > 0) {
+      for (i in seq_along(v$markers)) {
+      leafletProxy("map1") %>% 
+        addAwesomeMarkers(data = v$markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico) %>% 
+        addPolygons(data = v$polys[[i]], color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
+        
+      }
+      if (v$overlap) {
+        leafletProxy("map1") %>% 
+          addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
+      }
+    }
+    
+
+    
+  }, once = TRUE)
   
   
   
