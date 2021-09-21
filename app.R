@@ -3,6 +3,7 @@ library(leaflet)
 library(sf)
 library(shinythemes)
 library(rclipboard)
+library(shinyalert)
 
 lgas <- readRDS("lgas_small.rds")
 parks <- readRDS("sydney_parks.rds")
@@ -76,6 +77,7 @@ find_allowed_parks <- function(overall_area) {
 ui <- fluidPage(
   theme = shinytheme("flatly"),
   rclipboardSetup(),
+  useShinyalert(),
   tags$head(
     tags$link(rel="shortcut icon", href="/favicon.ico"), 
     tags$style(
@@ -344,6 +346,23 @@ server <- function(input, output, session) {
   # Add clipboard buttons
   output$copy_url <- renderUI({
     rclipButton("clipbtn", " Copy link to your map", v$qsps, icon("external-link-alt"))
+  })
+  
+  observeEvent(input$clipbtn, {
+    shinyalert(
+      title = "",
+      text = "Copied to clipboard",
+      size = "xs", 
+      closeOnEsc = TRUE,
+      closeOnClickOutside = TRUE,
+      html = FALSE,
+      type = "success",
+      showConfirmButton = FALSE,
+      showCancelButton = FALSE,
+      timer = 1500,
+      imageUrl = "",
+      animation = TRUE
+    )
   })
   
   output$msg <- renderText(v$msg)
