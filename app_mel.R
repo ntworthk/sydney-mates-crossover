@@ -315,7 +315,7 @@ server <- function(input, output, session) {
   
   # Add clipboard buttons
   output$copy_url <- renderUI({
-    rclipButton("clipbtn", " Copy link to your map", v$qsps, icon("external-link-alt"))
+    rclipButton("clipbtn", " Share link to your map", v$qsps, icon("external-link-alt"))
   })
   
   observeEvent(input$clipbtn, {
