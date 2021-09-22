@@ -95,7 +95,7 @@ fluidRow(
   column(12, h3(textOutput("msg")))
 ),
 fluidRow(
-  column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
+  column(12, align = "center", shinycssloaders::withSpinner(leafletOutput("map1", height = 600, width = "80%"), type = 4, color = "#95a5a6", hide.ui = FALSE))
 ),
 fluidRow(
   column(12, uiOutput("copy_url"), style='padding:10px;')
