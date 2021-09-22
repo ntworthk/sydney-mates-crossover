@@ -170,8 +170,8 @@ server <- function(input, output, session) {
     # Remove NULLs
     marker_pts <- purrr::compact(marker_pts)
     
-    # Take only top 5 points
-    marker_pts <- purrr::compact(marker_pts[1:5])
+    # Take only top n points
+    marker_pts <- purrr::compact(marker_pts[1:max_people])
     
     # Return
     return(purrr::compact(marker_pts))
