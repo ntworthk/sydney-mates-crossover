@@ -2,6 +2,8 @@ library(shiny)
 library(leaflet)
 library(sf)
 library(shinythemes)
+library(rclipboard)
+library(shinyalert)
 
 parks <- readRDS("melbourne_parks.rds")
 ico <- makeAwesomeIcon()
@@ -56,6 +58,8 @@ find_allowed_parks <- function(overall_area) {
 
 ui <- fluidPage(
   theme = shinytheme("flatly"),
+  rclipboardSetup(),
+  useShinyalert(),
   tags$head(
     tags$link(rel="shortcut icon", href="/favicon.ico"), 
     tags$style(
@@ -85,13 +89,16 @@ fluidRow(
   column(2, actionButton("showParks", textOutput("parks_message")))
 ),
 fluidRow(
-  column(6, p("Looking for a map for Sydney? That's", a(href = "https://picnicnear.me/", "here!")))
+  column(6, p("Looking for a map for Sydney? That's", a(href = "https://picnicnear.me", "here!")))
 ),
 fluidRow(
   column(12, h3(textOutput("msg")))
 ),
 fluidRow(
   column(12, align = "center", leafletOutput("map1", height = 600, width = "80%"))
+),
+fluidRow(
+  column(12, uiOutput("copy_url"), style='padding:10px;')
 ),
 fluidRow(
   column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
@@ -101,6 +108,9 @@ fluidRow(
 ),
 fluidRow(
   column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
+),
+fluidRow(
+  column(12, p(textInput("seed", label = "yo:", value = "searching")), style = "visibility: hidden;")
 )
 )
 
@@ -118,13 +128,211 @@ server <- function(input, output, session) {
     )
   )
   
-  v <- reactiveValues(polys = list(), msg = "", overlap = TRUE, overlappy = NA, marker_count = 0, markers = list(), parks = list(), show_parks = FALSE, parks_message = "Show parks")
-  
   output$map1 <- renderLeaflet({
     leaflet() %>%
       addProviderTiles("CartoDB") %>%
       addScaleBar(position = "bottomright", options = scaleBarOptions(maxWidth = 200, imperial = FALSE)) %>% 
       fitBounds(144.8940, -37.7926, 145.0680, -37.8680)
+  })
+  
+  qsps <- reactive({
+    
+    tmp <- parseQueryString(session$clientData$url_search)
+    tmp
+    
+  })
+  
+  check_latlon_params <- function(qsp_list) {
+    
+    params <- names(qsp_list)
+    
+    marker_candidates <- unique(gsub("[A-z]+", "", params))
+    
+    marker_pts <- lapply(seq_along(marker_candidates), function(i) {
+      
+      # Get current marker number
+      marker_number <- marker_candidates[i]
+      
+      # If lat AND lng exists, return it
+      if (all(paste0(c("lat", "lng"), marker_number) %in% params)) {
+        
+        lng <- as.numeric(qsp_list[[paste0("lng", marker_number)]])
+        lat <- as.numeric(qsp_list[[paste0("lat", marker_number)]])
+        
+        return(st_sfc(st_point(c(lng, lat)), crs = 4326))
+        
+      } else {
+        return(NULL)
+      }
+      
+    })
+    
+    # Remove NULLs
+    marker_pts <- purrr::compact(marker_pts)
+    
+    # Take only top 5 points
+    marker_pts <- purrr::compact(marker_pts[1:5])
+    
+    # Return
+    return(purrr::compact(marker_pts))
+    
+  }
+  
+  parse_qsps <- function(qsp_list) {
+    
+    check_latlon_params(qsp_list)
+    
+  }
+  
+  init_markers <- function() {
+    
+    markers <- parse_qsps(qsps())
+    
+    markers
+    
+  }
+  
+  
+  init_marker_count <- function(markers) {
+    
+    length(markers)
+    
+  }
+  
+  
+  init_polys <- function(markers) {
+    
+    
+    poly_list <- list()
+    
+    if (length(markers) > 0) {
+      
+      initial_markers <- markers
+      
+      for (i in seq_along(initial_markers)) {
+        
+        marker_ <- initial_markers[[i]]
+        
+        # Generate 5km buffer around point and LGA
+        poly <- generate_allowed_area(marker_)
+        poly_list <- append(poly_list, list(st_as_sf(poly)))
+        
+        # leafletProxy("map1") %>%
+        # addPolygons(data = poly, color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
+        
+      }
+      
+    }
+    
+    poly_list
+    
+  }
+  
+  init_overlap <- function(markers, polys) {
+    
+    overlappy <- NA
+    
+    if (length(markers) > 0) {
+      overlappy <- calculate_intersections(polys, length(markers))
+      
+      # leafletProxy("map1") %>%
+      # addPolygons(data = overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
+    } 
+    
+    overlappy
+  }
+  
+  
+  initial_overlap <- function(markers, polys) {
+    is.na(init_overlap(markers, polys)) || nrow(init_overlap(markers, polys)) > 0
+  }
+  
+  
+  v <- reactiveValues(
+    polys = list(),
+    msg = "",
+    overlap = TRUE,
+    overlappy = NA,
+    marker_count = 0,
+    markers = list(),
+    parks = list(),
+    show_parks = FALSE,
+    parks_message = "Show parks",
+    qsp = NA,
+    qsps = "https://picnicnear.me/vic"
+  )
+  
+  observeEvent(input$seed, {
+    updateTextInput(inputId = "seed", value = "")
+    
+    v$markers <- init_markers()
+    
+    v$marker_count <- init_marker_count(v$markers)
+    
+    v$polys <- init_polys(v$markers)
+    
+    v$overlappy <- init_overlap(v$markers, v$polys)
+    
+    v$overlap <- initial_overlap(v$markers, v$polys)
+    
+    if (v$marker_count > 0) {
+      for (i in seq_along(v$markers)) {
+        leafletProxy("map1") %>% 
+          addAwesomeMarkers(data = v$markers[[i]], options = markerOptions(draggable = TRUE), layerId = i, icon = ico) %>% 
+          addPolygons(data = v$polys[[i]], color = "blue", fillOpacity = 0.1, layerId = paste0("poly_", i), group = "areas", options = pathOptions(clickable = FALSE))
+        
+      }
+      if (v$overlap) {
+        leafletProxy("map1") %>% 
+          addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy")
+      }
+    }
+    
+    
+    
+  }, once = TRUE)
+  
+  generate_qsps <- function(markers) {
+    
+    
+    coords <- unlist(markers)
+    
+    qsp <- paste0(c("lng", "lat"), sort(rep.int(seq.int(from = 1, to = length(coords)/2, by = 1), 2)), "=", round(coords, digits = 4), collapse = "&")
+    
+    qsp
+    
+  }
+  
+  generate_url <- function() {
+    if (v$marker_count > 0) {
+      qsp <- generate_qsps(v$markers)
+      generated_url <- paste0(session$clientData$url_protocol, "//", session$clientData$url_hostname, ":", session$clientData$url_port, session$clientData$url_pathname, "?", qsp)
+    } else {
+      generated_url <- paste0(session$clientData$url_protocol, "//", session$clientData$url_hostname, ":", session$clientData$url_port, session$clientData$url_pathname)
+    }
+    generated_url
+  }
+  
+  # Add clipboard buttons
+  output$copy_url <- renderUI({
+    rclipButton("clipbtn", " Copy link to your map", v$qsps, icon("external-link-alt"))
+  })
+  
+  observeEvent(input$clipbtn, {
+    shinyalert(
+      title = "",
+      text = "Copied to clipboard",
+      size = "xs", 
+      closeOnEsc = TRUE,
+      closeOnClickOutside = TRUE,
+      html = FALSE,
+      type = "success",
+      showConfirmButton = FALSE,
+      showCancelButton = FALSE,
+      timer = 1500,
+      imageUrl = "",
+      animation = TRUE
+    )
   })
   
   output$msg <- renderText(v$msg)
@@ -216,7 +424,7 @@ server <- function(input, output, session) {
     }
     
     
-    
+    v$qsps <- generate_url()
     
   })
   
@@ -238,6 +446,8 @@ server <- function(input, output, session) {
     v$marker_count <- 0
     v$markers <- list()
     v$parks <- list()
+    
+    v$qsps <- generate_url()
     
   })
   
@@ -356,6 +566,7 @@ server <- function(input, output, session) {
       v$msg <- ""
     }
     
+    v$qsps <- generate_url()
     
   })
   
