@@ -84,53 +84,52 @@ ui <- fluidPage(
       HTML(
         ".leaflet-container {
   cursor: auto !important;
-  outline: 1px solid black;
 }")
     ),
-    includeHTML(("google-analytics.html")),
-    tags$script(HTML(
-      "$(document).on('shiny:inputchanged', function(event) {
+includeHTML(("google-analytics.html")),
+tags$script(HTML(
+  "$(document).on('shiny:inputchanged', function(event) {
        if (event.name === 'showParks') {
          gtag('event', 'input', event.name, event.value);
        }
      });"
-    )),
-    tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
-    tags$meta(name = "author", content = "Nick Twort"),
-    tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
-    tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends"),
-    tags$meta(name = "twitter:card", content = "summary")
+)),
+tags$meta(name = "image", property = "og:image", content="https://picnicnear.me/syd-picnic-image.png"),
+tags$meta(name = "author", content = "Nick Twort"),
+tags$meta(name = "title", property = "og:title", content = "Sydney picnic radius"),
+tags$meta(name = "description", property = "og:description", content = "Find out where you can picnic with your fully vaccinated friends"),
+tags$meta(name = "twitter:card", content = "summary")
   ),
-  titlePanel("Sydney picnic party"),
-  fluidRow(
-    column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA. The red area is where everyone can go. Don't forget, you need to be fully vaccinated for this to apply!")),
-    column(2, actionButton("clearMarkers", "Start again")),
-    column(2, actionButton("showParks", textOutput("parks_message")))
-  ),
-  fluidRow(
-    column(6, p("Looking for a map for Melbourne? That's", a(href = "https://picnicnear.me/vic", "here!")))
-  ),
-  fluidRow(
-    column(12, h3(textOutput("msg")))
-  ),
-  fluidRow(
-    column(12, align = "center", shinycssloaders::withSpinner(leafletOutput("map1", height = 600, width = "80%"), type = 4, color = "#95a5a6", hide.ui = FALSE))
-  ),
-  fluidRow(
-    column(12, uiOutput("copy_url"), style='padding:10px;')
-  ),
-  fluidRow(
-    column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
-  ),
-  fluidRow(
-    column(12, p("Final apologies - graphic (and web) design is not my passion."))
-  ),
-  fluidRow(
-    column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
-  ),
-  fluidRow(
-    column(12, p(textInput("seed", label = "yo:", value = "searching")), style = "visibility: hidden;")
-  )
+titlePanel("Sydney picnic party"),
+fluidRow(
+  column(6, p("Click on the map to enter the home locations of your friends. The map will show where each person can travel - within 5km of their home and also anywhere in their LGA. The red area is where everyone can go. Don't forget, you need to be fully vaccinated for this to apply!")),
+  column(2, actionButton("clearMarkers", "Start again")),
+  column(2, actionButton("showParks", textOutput("parks_message")))
+),
+fluidRow(
+  column(6, p("Looking for a map for Melbourne? That's", a(href = "https://picnicnear.me/vic", "here!")))
+),
+fluidRow(
+  column(12, h3(textOutput("msg")))
+),
+fluidRow(
+  column(12, align = "center", shinycssloaders::withSpinner(leafletOutput("map1", height = 600, width = "80%"), type = 4, color = "#95a5a6", hide.ui = FALSE))
+),
+fluidRow(
+  column(12, uiOutput("copy_url"), style='padding:10px;')
+),
+fluidRow(
+  column(12, p("This is an unofficial website based on open data. Information provided here should be treated as a guide only and may not be up to date. We strongly recommend users review official sources in addition with consulting this website as a guide. Whilst we endevour to ensure the information provided on this website or application is accurate and up-to-date, we do not guarantee the accuracy or timeliness of information presented on the website or application. You should not rely solely on the information on this website."))
+),
+fluidRow(
+  column(12, p("Final apologies - graphic (and web) design is not my passion."))
+),
+fluidRow(
+  column(12, p(a(href = "https://twitter.com/nwbort", target = "_blank", "Follow me on Twitter", .noWS = "after"), ", find the code on ", a(href = "https://github.com/nwbort/sydney-mates-crossover", target = "_blank", "Github", .noWS = "after"), " and stay safe everyone!"))
+),
+fluidRow(
+  column(12, p(textInput("seed", label = "yo:", value = "searching")), style = "visibility: hidden;")
+)
 )
 
 
@@ -147,12 +146,6 @@ server <- function(input, output, session) {
     )
   )
   
-
-  create_popup_div <- function(id) {
-    paste0('<div style="text-align:center;">Drag to move<br/><a id="friend_marker_click" href="#" class="action-button" onclick="{Shiny.onInputChange(&quot;friend_marker_click&quot;, ', id, ');}">Click to delete</button></div>')
-  }
-  
-
   output$map1 <- renderLeaflet({
     
     l <- leaflet() %>%
@@ -414,7 +407,7 @@ server <- function(input, output, session) {
           clearGroup(group = "parks") %>% 
           clearGroup(group = "overlappy") %>% 
           addPolygons(data = v$overlappy, color = "red", fillOpacity = 0.5, group = "overlappy") %>% 
-          addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = as.character(v$marker_count), icon = ico, popup = create_popup_div(v$marker_count))
+          addAwesomeMarkers(lng = input$map1_click$lng, lat = input$map1_click$lat, options = markerOptions(draggable = TRUE), layerId = v$marker_count, icon = ico)
         
         # Check if there is an overlap
         v$overlap <- nrow(v$overlappy) > 0
@@ -470,18 +463,6 @@ server <- function(input, output, session) {
     
     
   })
-  
-  
-  observeEvent(input$friend_marker_click, {
-    
-    print(input$friend_marker_click)
-    
-    leafletProxy("map1") %>% 
-      removeMarker(layerId = as.character(input$friend_marker_click))
-    
-  })
-  
-  
   
   # Button to clear the map
   observeEvent(input$clearMarkers, {
@@ -624,12 +605,7 @@ server <- function(input, output, session) {
     v$qsps <- generate_url()
     
   })
-
   
 }
-
-
-
-
 
 shinyApp(ui, server)
