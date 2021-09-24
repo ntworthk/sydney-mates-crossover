@@ -84,6 +84,7 @@ ui <- fluidPage(
       HTML(
         ".leaflet-container {
   cursor: auto !important;
+  outline: 1px solid black;
 }")
     ),
     includeHTML(("google-analytics.html")),
