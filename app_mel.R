@@ -8,7 +8,7 @@ library(shinyalert)
 parks <- readRDS("melbourne_parks.rds")
 ico <- makeAwesomeIcon()
 max_people <- 2
-max_distance <- 10000
+max_distance <- 15000
 
 generate_buffer <- function(point, radius) {
   point %>%
@@ -17,10 +17,10 @@ generate_buffer <- function(point, radius) {
     st_transform(4326)
 }
 
-generate_allowed_area <- function(point) {
+generate_allowed_area <- function(point, distance = max_distance) {
   
   # 5km radius
-  poly <- generate_buffer(point, max_distance)
+  poly <- generate_buffer(point, distance)
 
   poly
   
@@ -91,6 +91,9 @@ fluidRow(
 ),
 fluidRow(
   column(6, p("Looking for a map for Sydney? That's", a(href = "https://picnicnear.me", "here!")))
+),
+fluidRow(
+  column(12, radioButtons("distance_radio", label = "Distance allowed", choices = list("10km" = 10000, "15km" = 15000)))
 ),
 fluidRow(
   column(12, h3(textOutput("msg")))
@@ -215,7 +218,7 @@ server <- function(input, output, session) {
         marker_ <- initial_markers[[i]]
         
         # Generate 5km buffer around point and LGA
-        poly <- generate_allowed_area(marker_)
+        poly <- generate_allowed_area(marker_, as.numeric(input$distance_radio))
         poly_list <- append(poly_list, list(st_as_sf(poly)))
         
         # leafletProxy("map1") %>%
@@ -358,7 +361,7 @@ server <- function(input, output, session) {
         v$markers <- append(v$markers, list(pt))
         
         # Generate 5km buffer around point
-        poly <- generate_allowed_area(pt)
+        poly <- generate_allowed_area(pt, as.numeric(input$distance_radio))
         
         # Add the new polygon to the polys
         v$polys <- append(v$polys, list(st_as_sf(poly)))
@@ -513,7 +516,7 @@ server <- function(input, output, session) {
     v$markers[[input$map1_marker_dragend$id]] <- list(pt)
     
     # Generate 5km buffer around point
-    poly <- generate_allowed_area(pt)
+    poly <- generate_allowed_area(pt, as.numeric(input$distance_radio))
     
     v$polys[[input$map1_marker_dragend$id]] <- st_as_sf(poly)
     
