@@ -9,6 +9,7 @@ lgas <- readRDS("lgas_small.rds")
 parks <- readRDS("sydney_parks.rds")
 ico <- makeAwesomeIcon()
 max_people <- 5
+max_distance <- 5000
 
 generate_buffer <- function(point, radius) {
   point %>%
@@ -20,7 +21,7 @@ generate_buffer <- function(point, radius) {
 generate_allowed_area <- function(point) {
   
   # 5km radius
-  poly <- generate_buffer(point, 5000)
+  poly <- generate_buffer(point, max_distance)
   
   # Find LGA of point
   lga_idx <- as.numeric(st_within(point, lgas))
