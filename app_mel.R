@@ -85,15 +85,12 @@ tags$meta(name = "twitter:card", content = "summary")
   ),
 titlePanel("Melbourne picnic party"),
 fluidRow(
-  column(6, p("Click on the map to enter the home locations of you and another houehold. The map will show where each household can travel - within 10km of their home. The red area is within 10km of all people. Don't forget, you all need to be fully vaccinated for you to have 5 people from 2 households (otherwise the limit is 2 people)!")),
+  column(6, p("Click on the map to enter the home locations of you and another houehold. The map will show where each household can travel - within 15km of their home. The red area is within 15km of all people. Don't forget, you all need to be fully vaccinated for you to have 5 people from 2 households (otherwise the limit is 2 people)!")),
   column(2, actionButton("clearMarkers", "Start again")),
   column(2, actionButton("showParks", textOutput("parks_message")))
 ),
 fluidRow(
   column(6, p("Looking for a map for Sydney? That's", a(href = "https://picnicnear.me", "here!")))
-),
-fluidRow(
-  column(12, radioButtons("distance_radio", label = "Distance allowed", choices = list("10km" = 10000, "15km" = 15000)))
 ),
 fluidRow(
   column(12, h3(textOutput("msg")))
@@ -218,7 +215,7 @@ server <- function(input, output, session) {
         marker_ <- initial_markers[[i]]
         
         # Generate 5km buffer around point and LGA
-        poly <- generate_allowed_area(marker_, as.numeric(input$distance_radio))
+        poly <- generate_allowed_area(marker_, max_distance)
         poly_list <- append(poly_list, list(st_as_sf(poly)))
         
         # leafletProxy("map1") %>%
@@ -361,7 +358,7 @@ server <- function(input, output, session) {
         v$markers <- append(v$markers, list(pt))
         
         # Generate 5km buffer around point
-        poly <- generate_allowed_area(pt, as.numeric(input$distance_radio))
+        poly <- generate_allowed_area(pt, max_distance)
         
         # Add the new polygon to the polys
         v$polys <- append(v$polys, list(st_as_sf(poly)))
@@ -516,7 +513,7 @@ server <- function(input, output, session) {
     v$markers[[input$map1_marker_dragend$id]] <- list(pt)
     
     # Generate 5km buffer around point
-    poly <- generate_allowed_area(pt, as.numeric(input$distance_radio))
+    poly <- generate_allowed_area(pt, max_distance)
     
     v$polys[[input$map1_marker_dragend$id]] <- st_as_sf(poly)
     
