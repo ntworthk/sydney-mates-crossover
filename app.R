@@ -141,7 +141,8 @@ server <- function(input, output, session) {
     modalDialog(
       title = "Welcome to the Sydney picnic map!",
       p("This tool can help you plan where you can meet your fully vaccinated friends. Click on the map at each person's place of residence (you can drag the markers around if you make a mistake!)."),
-      p("The map will show the area that everyone can reach in red."),
+      p("Restrictions have eased again, which means the 5km limit no longer applies. This tool might go away soon, but it's here to stay for a little longer."),
+      p("If you haven't been vaxxed, go now!"),
       p("Click the 'show parks' button to find a nice grassy (or beachy) spot to meet!"),
       footer = a(href = "https://www.nsw.gov.au/covid-19/rules/greater-sydney#outdoor-gatherings", target = "_blank", "See the NSW government website for more details."),
       easyClose = TRUE
