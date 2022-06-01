@@ -78,7 +78,6 @@ find_allowed_parks <- function(overall_area) {
 ui <- fluidPage(
   theme = shinytheme("flatly"),
   rclipboardSetup(),
-  useShinyalert(),
   tags$head(
     tags$link(rel="shortcut icon", href="/favicon.svg"), 
     tags$link(rel="alternate icon", href="/favicon.ico"), 
