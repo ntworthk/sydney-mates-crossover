@@ -269,7 +269,7 @@ server <- function(input, output, session) {
   
   
   initial_overlap <- function(markers, polys) {
-    is.na(init_overlap(markers, polys)) || nrow(init_overlap(markers, polys)) > 0
+    all(is.na(init_overlap(markers, polys))) || nrow(st_drop_geometry(init_overlap(markers, polys))) > 0
   }
   
   v <- reactiveValues(
