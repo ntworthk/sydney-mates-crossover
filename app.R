@@ -290,7 +290,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$seed, {
     
-    updateTextInput(inputId = "seed", value = "")
+    updateTextInput(session = session, inputId = "seed", value = "")
     
     v$markers <- init_markers()
     
